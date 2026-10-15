@@ -1,9 +1,10 @@
 package com.ChicaemeSAS.BackendSistema.model;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -12,32 +13,35 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@EqualsAndHashCode(callSuper = false)
-
-@Table (name = "pago")
+@Table(name = "pago")
 public class Pago {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Fecha del abono (antes se llamaba fehcaPago por typo) */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Column (nullable = false)
-    private LocalDate fehcaPago;
+    @Column(name = "fecha_pago", nullable = false)
+    private LocalDate fechaPago;
 
-    @Column (nullable = false)
+    @Column(nullable = false)
     private Double monto;
 
-    @Column (nullable = false, length = 100)
+    /** Transferencia | Efectivo | Consignacion | Cheque | Otro */
+    @Column(nullable = false, length = 100)
     private String metodoPago;
 
-    @Column (nullable = false, length = 100)
+    /** Número de comprobante, referencia bancaria, etc. */
+    @Column(length = 200)
     private String comprobantePago;
 
-    // --- LA EXPLICACIÓN DEL MANY TO ONE ---
-    // Le decimos: "Muchos pagos pertenecen a Una Cotizacion"
+    /** Nota libre del admin */
+    @Column(columnDefinition = "TEXT")
+    private String notas;
+
     @ManyToOne
-    // Le indicamos que en MySQL cree una columna llamada "cotizacion_id"
     @JoinColumn(name = "cotizacion_id", nullable = false)
-    // Traemos el objeto COMPLETO de la cotización, no un simple String
+    @JsonIgnoreProperties({"detalles", "pagos"})
     private Cotizacion cotizacion;
 }

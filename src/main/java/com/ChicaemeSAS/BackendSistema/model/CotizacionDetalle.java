@@ -16,30 +16,35 @@ public class CotizacionDetalle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 1. ¿A qué cotización pertenece este detalle? (La Cabecera)
     @ManyToOne
     @JoinColumn(name = "cotizacion_id", nullable = false)
     private Cotizacion cotizacion;
 
-    // 2. Opción A: ¿El cliente está alquilando un objeto físico? (Puede ser nulo si es un servicio)
     @ManyToOne
     @JoinColumn(name = "articulo_id")
     private ArticuloAlquiler articuloAlquiler;
 
-    // 3. Opción B: ¿El cliente está contratando comida o logística? (Puede ser nulo si es un artículo)
     @ManyToOne
     @JoinColumn(name = "servicio_id")
-    private servicios servicio; // Dejo "servicios" en minúscula tal como lo tienes actualmente
+    private servicios servicio;
 
-    // 4. Los números de la operación
+    /** Cantidad alquilada / comprometida */
     @Column(nullable = false)
     private Integer cantidad;
 
-    // IMPORTANTE: Guardamos el precio al momento de la venta.
-    // Si mañana cambias el precio en el catálogo, esta cotización antigua no debe alterarse.
     @Column(nullable = false)
     private Double precioUnitario;
 
     @Column(nullable = false)
-    private Double subtotal; // cantidad * precioUnitario
+    private Double subtotal;
+
+    // ── Devolución (se llenan al registrar regreso del material) ──────────
+    /** Unidades que volvieron en buen estado */
+    private Integer cantidadDevueltaBuena;
+
+    /** Unidades dañadas (se restan del stock total, no vuelven a disponible) */
+    private Integer cantidadDanada;
+
+    /** Unidades perdidas (se restan del stock total) */
+    private Integer cantidadPerdida;
 }

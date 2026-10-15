@@ -13,38 +13,61 @@ public class ArticuloAlquilerService {
     @Autowired
     private ArticuloAlquilerRepository repository;
 
-    // Método para guardar un nuevo artículo
     public ArticuloAlquiler guardarArticulo(ArticuloAlquiler articulo) {
         return repository.save(articulo);
     }
 
-    // Método para traer todo el inventario
     public List<ArticuloAlquiler> obtenerTodos() {
         return repository.findAll();
     }
 
-    // Método para buscar por ID
     public ArticuloAlquiler obtenerPorId(long id) {
         return repository.findById(id).orElse(null);
     }
 
-    // Método para eliminar
     public void eliminarPorId(long id) {
         repository.deleteById(id);
     }
 
-    // MÉTODO ACTUALIZADO: Ahora incluye fotoUrl
+    /**
+     * Actualiza datos del artículo.
+     * REGLA: el stockTotal solo puede aumentar (reposición/compra).
+     * No se permite bajar el stock a mano; las bajas vienen de alquileres y daños.
+     */
     public ArticuloAlquiler actualizarArticulo(Long id, ArticuloAlquiler datosNuevos) {
         return repository.findById(id).map(articuloExistente -> {
             articuloExistente.setNombre(datosNuevos.getNombre());
             articuloExistente.setDescripcion(datosNuevos.getDescripcion());
             articuloExistente.setPrecioAlquiler(datosNuevos.getPrecioAlquiler());
-            articuloExistente.setStockTotal(datosNuevos.getStockTotal());
-
-            // Línea clave agregada para manejar la foto
             articuloExistente.setFotoUrl(datosNuevos.getFotoUrl());
+
+            Integer stockNuevo = datosNuevos.getStockTotal();
+            Integer stockActual = articuloExistente.getStockTotal();
+
+            if (stockNuevo != null) {
+                if (stockNuevo < stockActual) {
+                    throw new RuntimeException(
+                            "No se puede reducir el stock manualmente. "
+                                    + "Las bajas solo ocurren por alquileres aprobados o por daños/pérdidas en devoluciones. "
+                                    + "Para aumentar inventario (compra/reposición), indica un valor mayor al actual ("
+                                    + stockActual + ")."
+                    );
+                }
+                articuloExistente.setStockTotal(stockNuevo);
+            }
 
             return repository.save(articuloExistente);
         }).orElse(null);
+    }
+
+    /** Endpoint explícito solo para sumar stock (reposición) */
+    public ArticuloAlquiler aumentarStock(Long id, int cantidad) {
+        if (cantidad <= 0) {
+            throw new RuntimeException("La cantidad a agregar debe ser mayor que 0");
+        }
+        return repository.findById(id).map(art -> {
+            art.setStockTotal(art.getStockTotal() + cantidad);
+            return repository.save(art);
+        }).orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
     }
 }

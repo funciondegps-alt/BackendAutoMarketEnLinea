@@ -6,35 +6,49 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/articulos") // Esta será la URL base
+@RequestMapping("/api/articulos")
 public class ArticuloAlquilerController {
 
     @Autowired
     private ArticuloAlquilerService service;
 
-    // Petición GET: Para ver todos los artículos (http://localhost:8080/api/articulos)
     @GetMapping
     public List<ArticuloAlquiler> listarArticulos() {
         return service.obtenerTodos();
     }
 
-    // Petición POST: Para crear un nuevo artículo
     @PostMapping
     public ArticuloAlquiler crearArticulo(@RequestBody ArticuloAlquiler articulo) {
         return service.guardarArticulo(articulo);
     }
-    // Dentro de ArticuloAlquilerController.java
 
     @GetMapping("/{id}")
     public ArticuloAlquiler obtenerArticulo(@PathVariable Long id) {
         return service.obtenerPorId(id);
     }
 
+    /**
+     * Actualiza artículo. El stock solo puede aumentar.
+     * Si envías un stockTotal menor al actual → error 500 con mensaje claro.
+     */
     @PutMapping("/{id}")
-    public ArticuloAlquiler actualizarArticulo(@PathVariable Long id, @RequestBody ArticuloAlquiler actualizandoArticulo) {
+    public ArticuloAlquiler actualizarArticulo(
+            @PathVariable Long id,
+            @RequestBody ArticuloAlquiler actualizandoArticulo
+    ) {
         return service.actualizarArticulo(id, actualizandoArticulo);
+    }
+
+    /** Suma stock (compra/reposición). Body: { "cantidad": 50 } */
+    @PutMapping("/{id}/aumentar-stock")
+    public ArticuloAlquiler aumentarStock(
+            @PathVariable Long id,
+            @RequestBody Map<String, Integer> body
+    ) {
+        return service.aumentarStock(id, body.getOrDefault("cantidad", 0));
     }
 
     @DeleteMapping("/{id}")
